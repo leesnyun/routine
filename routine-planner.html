@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 루틴</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --bg:       #0e0e14;
+    --bg2:      #16161f;
+    --card:     #1a1a26;
+    --card2:    #1f1f2e;
+    --border:   #2a2a3e;
+    --text:     #e8e8f0;
+    --sub:      #6068a0;
+    --sleep:    #778090;
+    --exercise: #a78bfa;
+    --study:    #34d399;
+    --meal:     #fbbf24;
+    --hygiene:  #f472b6;
+    --transit:  #3a4060;
+    --rest:     #64748b;
+    --warn:     #f87171;
+  }
+  body {
+    background:var(--bg); font-family:'Noto Sans KR',sans-serif;
+    color:var(--text); min-height:100vh;
+    padding:22px 14px 60px; max-width:640px; margin:0 auto;
+  }
+
+  /* HEADER */
+  .header { text-align:center; margin-bottom:18px; }
+  .header h1 { font-size:11px; font-weight:700; color:var(--sub); letter-spacing:3px; text-transform:uppercase; margin-bottom:4px; }
+  .date-display { font-size:20px; font-weight:700; }
+
+  /* WARNINGS */
+  .warn-area { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+  .warn-box {
+    background:#2a1414; border:1px solid #7f2020; border-left:3px solid var(--warn);
+    border-radius:10px; padding:9px 13px; font-size:12px; font-weight:600; color:var(--warn);
+    animation:fadeIn .2s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
+  /* SELECTORS — now 3 cols */
+  .selector { display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px; margin-bottom:14px; }
+  .selector-group { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:11px; }
+  .selector-group label { display:block; font-size:9px; font-weight:700; color:var(--sub); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
+  .toggle-row { display:flex; gap:5px; }
+  .toggle-btn {
+    flex:1; padding:7px 3px; border-radius:8px; border:1.5px solid var(--border);
+    background:transparent; color:var(--sub); font-size:10px; font-weight:600;
+    font-family:'Noto Sans KR',sans-serif; cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .on-exercise    { background:#3b1f6e; border-color:var(--exercise); color:var(--exercise); }
+  .on-no-exercise { background:#1a2f4a; border-color:#60a5fa;         color:#60a5fa; }
+  .on-morning     { background:#2a1a4a; border-color:#c084fc;         color:#c084fc; }
+  .on-evening     { background:#1a2a3a; border-color:#38bdf8;         color:#38bdf8; }
+  .on-bento       { background:#1e3a2a; border-color:var(--study);    color:var(--study); }
+  .on-home        { background:#3a2a14; border-color:var(--meal);     color:var(--meal); }
+
+  /* STATS */
+  .stat-bar {
+    display:flex; margin-bottom:16px;
+    background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden;
+  }
+  .stat { flex:1; text-align:center; padding:12px 6px; }
+  .stat:not(:last-child) { border-right:1px solid var(--border); }
+  .stat-value { font-size:17px; font-weight:700; color:var(--study); }
+  .stat-value.warn-val { color:var(--warn); }
+  .stat-label { font-size:10px; color:var(--sub); margin-top:2px; }
+
+  /* MAIN LAYOUT */
+  .main-layout { display:flex; gap:11px; align-items:flex-start; }
+
+  /* ROUTINE CARD */
+  .routine-card {
+    flex:1; min-width:0;
+    background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden;
+  }
+  .card-header { padding:15px 16px 11px; border-bottom:1px solid var(--border); }
+  .card-header-top { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+  .card-emoji {
+    font-size:22px; width:38px; height:38px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:10px; background:var(--card2);
+  }
+  .card-title    { font-size:14px; font-weight:700; line-height:1.3; }
+  .card-subtitle { font-size:11px; color:var(--sub); margin-top:2px; }
+  .badge { display:inline-block; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge-ex    { background:#3b1f6e; color:var(--exercise); }
+  .badge-noex  { background:#1a2f4a; color:#60a5fa; }
+
+  /* TIMELINE */
+  .timeline { padding:4px 0; }
+  .tl-item { display:flex; align-items:flex-start; padding:6px 14px; gap:10px; position:relative; }
+  .tl-item:not(:last-child)::after {
+    content:''; position:absolute; left:43px; top:26px; bottom:-1px;
+    width:2px; background:var(--border);
+  }
+  /* transit: muted, compact */
+  .tl-item.transit { padding-top:2px; padding-bottom:2px; opacity:.55; }
+  .tl-item.transit .tl-name { font-size:10px; font-weight:400; letter-spacing:.2px; }
+  .tl-item.transit .tl-time { font-size:9px; }
+  .tl-item.transit .tl-dot  { width:6px; height:6px; margin-top:2px; }
+
+  .tl-time { width:36px; font-size:10px; color:var(--sub); padding-top:3px; text-align:right; flex-shrink:0; font-weight:500; }
+  .tl-dot-col { width:10px; display:flex; padding-top:5px; flex-shrink:0; position:relative; z-index:1; }
+  .tl-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .tl-content { flex:1; min-width:0; }
+  .tl-name { font-size:12px; font-weight:600; line-height:1.4; }
+  .tl-dur  { font-size:10px; color:var(--sub); margin-top:1px; }
+
+  .c-sleep{color:var(--sleep)} .c-exercise{color:var(--exercise)} .c-study{color:var(--study)}
+  .c-meal{color:var(--meal)}   .c-hygiene{color:var(--hygiene)}   .c-transit{color:var(--transit)}
+  .c-rest{color:var(--rest)}   .c-default{color:var(--text)}
+  .d-sleep{background:var(--sleep)}    .d-exercise{background:var(--exercise)} .d-study{background:var(--study)}
+  .d-meal{background:var(--meal)}      .d-hygiene{background:var(--hygiene)}
+  .d-transit{background:var(--transit)} .d-rest{background:var(--rest)}
+
+  .tl-item.study-block { background:rgba(52,211,153,.04); border-radius:8px; }
+
+  /* LEGEND */
+  .legend {
+    display:flex; flex-wrap:wrap; gap:7px 12px;
+    padding:11px 14px; border-top:1px solid var(--border); justify-content:center;
+  }
+  .legend-item { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--sub); }
+  .legend-dot  { width:6px; height:6px; border-radius:50%; }
+
+  /* SLIDER PANEL */
+  .slider-panel {
+    width:150px; flex-shrink:0;
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:12px 10px; display:flex; flex-direction:column; gap:12px;
+  }
+  .sl-section-title {
+    font-size:9px; font-weight:700; color:var(--sub);
+    letter-spacing:1.5px; text-transform:uppercase;
+    padding-bottom:5px; border-bottom:1px solid var(--border);
+  }
+  .sl-item { display:flex; flex-direction:column; gap:5px; }
+  .sl-label { display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--sub); font-weight:600; }
+  .sl-val { font-size:11px; font-weight:700; color:var(--study); white-space:nowrap; }
+  .sl-divider { height:1px; background:var(--border); }
+  .ex-only { transition:opacity .2s; }
+  .ex-only.hidden { opacity:.25; pointer-events:none; }
+
+  input[type=range] {
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:4px; border-radius:4px;
+    background:var(--border); outline:none; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none;
+    width:13px; height:13px; border-radius:50%;
+    background:var(--study); cursor:pointer;
+    box-shadow:0 0 0 3px rgba(52,211,153,.18); transition:box-shadow .15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { box-shadow:0 0 0 5px rgba(52,211,153,.28); }
+  input[type=range].range-time::-webkit-slider-thumb { background:#818cf8; box-shadow:0 0 0 3px rgba(129,140,248,.18); }
+  input[type=range].range-time:hover::-webkit-slider-thumb { box-shadow:0 0 0 5px rgba(129,140,248,.28); }
+
+  /* TIP */
+  .tip-box {
+    margin-top:12px; background:var(--card); border:1px solid var(--border);
+    border-left:3px solid var(--exercise); border-radius:12px;
+    padding:11px 13px; font-size:11px; line-height:1.75; color:#9090b8;
+  }
+  .tip-box strong { color:var(--exercise); }
+  .tip-study { border-left-color:var(--study); }
+  .tip-study strong { color:var(--study); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>routine</h1>
+  <div class="date-display" id="dateDisplay"></div>
+</div>
+
+<div class="warn-area" id="warnArea"></div>
+
+<!-- Selectors: 3 columns -->
+<div class="selector">
+  <div class="selector-group">
+    <label>운동 여부</label>
+    <div class="toggle-row">
+      <button class="toggle-btn on-exercise" id="btn-ex"   onclick="setEx(true)">🏋️ 운동</button>
+      <button class="toggle-btn"             id="btn-noex" onclick="setEx(false)">📚 비운동</button>
+    </div>
+  </div>
+  <div class="selector-group" id="group-extime">
+    <label>운동 시간대</label>
+    <div class="toggle-row">
+      <button class="toggle-btn on-morning" id="btn-morning" onclick="setExTime('morning')">🌅 아침</button>
+      <button class="toggle-btn"            id="btn-evening" onclick="setExTime('evening')">🌙 저녁</button>
+    </div>
+  </div>
+  <div class="selector-group">
+    <label>점심 방식</label>
+    <div class="toggle-row">
+      <button class="toggle-btn on-bento" id="btn-bento" onclick="setLunch('bento')">🍱 도시락</button>
+      <button class="toggle-btn"          id="btn-home"  onclick="setLunch('home')">🏠 귀가</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stat-bar">
+  <div class="stat"><div class="stat-value" id="stat-study">–</div><div class="stat-label">순공</div></div>
+  <div class="stat"><div class="stat-value" id="stat-sleep-dur">–</div><div class="stat-label">수면</div></div>
+  <div class="stat"><div class="stat-value" id="stat-trips">–</div><div class="stat-label">이동 횟수</div></div>
+</div>
+
+<!-- Main layout: card | sliders -->
+<div class="main-layout">
+
+  <!-- Timeline Card -->
+  <div class="routine-card">
+    <div class="card-header">
+      <div class="card-header-top">
+        <div class="card-emoji" id="cardEmoji"></div>
+        <div>
+          <div class="card-title" id="cardTitle"></div>
+          <div class="card-subtitle" id="cardSubtitle"></div>
+        </div>
+      </div>
+      <div class="badge" id="cardBadge"></div>
+    </div>
+    <div class="timeline" id="timeline"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--exercise)"></div>운동</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--study)"></div>공부</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--meal)"></div>식사</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--hygiene)"></div>샤워</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--rest)"></div>휴식</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--transit)"></div>이동</div>
+    </div>
+  </div>
+
+  <!-- Slider Panel -->
+  <div class="slider-panel">
+
+    <div class="sl-section-title">⏰ 시간 고정</div>
+
+    <div class="sl-item">
+      <div class="sl-label">기상 <span class="sl-val" id="lbl-wake"></span></div>
+      <input type="range" class="range-time" id="sl-wake" min="300" max="540" step="5" value="390" oninput="onSlide('wake',this.value)">
+    </div>
+    <div class="sl-item">
+      <div class="sl-label">취침 <span class="sl-val" id="lbl-sleep"></span></div>
+      <input type="range" class="range-time" id="sl-sleep" min="1320" max="1500" step="5" value="1440" oninput="onSlide('sleep',this.value)">
+    </div>
+    <div class="sl-item">
+      <div class="sl-label">점심 시작 <span class="sl-val" id="lbl-lunchAt"></span></div>
+      <input type="range" class="range-time" id="sl-lunchAt" min="660" max="840" step="5" value="720" oninput="onSlide('lunchAt',this.value)">
+    </div>
+    <div class="sl-item">
+      <div class="sl-label">저녁 시작 <span class="sl-val" id="lbl-dinnerAt"></span></div>
+      <input type="range" class="range-time" id="sl-dinnerAt" min="960" max="1140" step="5" value="1090" oninput="onSlide('dinnerAt',this.value)">
+    </div>
+    <div class="sl-item ex-only" id="row-evEx">
+      <div class="sl-label">저녁운동 시작 <span class="sl-val" id="lbl-evExAt"></span></div>
+      <input type="range" class="range-time" id="sl-evExAt" min="1140" max="1320" step="5" value="1260" oninput="onSlide('evExAt',this.value)">
+    </div>
+    <div class="sl-item">
+      <div class="sl-label">귀가 마감 <span class="sl-val" id="lbl-curfew"></span></div>
+      <input type="range" class="range-time" id="sl-curfew" min="1260" max="1440" step="5" value="1380" oninput="onSlide('curfew',this.value)">
+    </div>
+
+    <div class="sl-divider"></div>
+    <div class="sl-section-title">🏃 운동</div>
+
+    <div class="sl-item ex-only" id="row-exDur">
+      <div class="sl-label">운동 시간 <span class="sl-val" id="lbl-exDur"></span></div>
+      <input type="range" id="sl-exDur" min="30" max="150" step="5" value="70" oninput="onSlide('exDur',this.value)">
+    </div>
+    <div class="sl-item ex-only" id="row-exTravel">
+      <div class="sl-label">헬스장 이동 <span class="sl-val" id="lbl-exTravel"></span></div>
+      <input type="range" id="sl-exTravel" min="5" max="40" step="5" value="10" oninput="onSlide('exTravel',this.value)">
+    </div>
+
+    <div class="sl-divider"></div>
+    <div class="sl-section-title">🍽️ 식사·기타</div>
+
+    <div class="sl-item">
+      <div class="sl-label">아침 준비 <span class="sl-val" id="lbl-morning"></span></div>
+      <input type="range" id="sl-morning" min="10" max="90" step="5" value="40" oninput="onSlide('morning',this.value)">
+    </div>
+    <div class="sl-item">
+      <div class="sl-label">스카 이동 <span class="sl-val" id="lbl-skaTravel"></span></div>
+      <input type="range" id="sl-skaTravel" min="5" max="30" step="5" value="10" oninput="onSlide('skaTravel',this.value)">
+    </div>
+    <div class="sl-item">
+      <div class="sl-label">점심 식사 <span class="sl-val" id="lbl-lunchDur"></span></div>
+      <input type="range" id="sl-lunchDur" min="15" max="90" step="5" value="30" oninput="onSlide('lunchDur',this.value)">
+    </div>
+    <div class="sl-item">
+      <div class="sl-label">저녁 식사 <span class="sl-val" id="lbl-dinnerDur"></span></div>
+      <input type="range" id="sl-dinnerDur" min="15" max="90" step="5" value="50" oninput="onSlide('dinnerDur',this.value)">
+    </div>
+    <div class="sl-item">
+      <div class="sl-label">샤워 <span class="sl-val" id="lbl-shower"></span></div>
+      <input type="range" id="sl-shower" min="10" max="60" step="5" value="30" oninput="onSlide('shower',this.value)">
+    </div>
+
+  </div><!-- /slider-panel -->
+</div><!-- /main-layout -->
+
+<div class="tip-box" id="tipBox"></div>
+
+<script>
+// ── State ────────────────────────────────────────────────
+const S = {
+  wake:      390,   // 6:30
+  sleep:     1440,  // 24:00
+  lunchAt:   720,   // 12:00
+  dinnerAt:  1090,  // 18:10
+  evExAt:    1260,  // 21:00 — evening exercise start
+  curfew:    1380,  // 23:00
+  exDur:     70,
+  exTravel:  10,
+  morning:   40,
+  skaTravel: 10,
+  lunchDur:  30,
+  dinnerDur: 50,
+  shower:    30,
+};
+
+let isEx     = true;
+let exTime   = 'morning'; // 'morning' | 'evening'
+let lunch    = 'bento';
+
+// ── Helpers ──────────────────────────────────────────────
+function fmt(m) {
+  m = ((m % 1440) + 1440) % 1440;
+  return `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
+}
+function fmtAbs(m) {
+  // Handles values >= 1440 (e.g. 24:xx, 25:xx)
+  return `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
+}
+function dur(m) {
+  if (m <= 0) return '';
+  const h=Math.floor(m/60), mn=m%60;
+  if (h===0) return `${mn}분`;
+  if (mn===0) return `${h}시간`;
+  return `${h}시간 ${mn}분`;
+}
+
+// ── Labels & UI ──────────────────────────────────────────
+const TIME_KEYS = ['wake','sleep','lunchAt','dinnerAt','evExAt','curfew'];
+const DUR_KEYS  = ['exDur','exTravel','morning','skaTravel','lunchDur','dinnerDur','shower'];
+
+function updateLabels() {
+  for (const k of TIME_KEYS) {
+    const el = document.getElementById('lbl-'+k); if(el) el.textContent = fmtAbs(S[k]);
+  }
+  for (const k of DUR_KEYS) {
+    const el = document.getElementById('lbl-'+k); if(el) el.textContent = dur(S[k]);
+  }
+  // ex-only rows
+  const exRows = ['row-exDur','row-exTravel'];
+  exRows.forEach(id => { const el=document.getElementById(id); if(el) el.classList.toggle('hidden',!isEx); });
+  // evening ex slider only visible when evening mode
+  const evRow = document.getElementById('row-evEx');
+  if(evRow) evRow.classList.toggle('hidden', !(isEx && exTime==='evening'));
+  // dim extime selector when no exercise
+  const grp = document.getElementById('group-extime');
+  if(grp) grp.style.opacity = isEx ? '1' : '0.4';
+}
+
+function onSlide(key,val) { S[key]=parseInt(val); updateLabels(); render(); }
+
+function setEx(val) {
+  isEx=val;
+  document.getElementById('btn-ex').className    = 'toggle-btn'+(val?' on-exercise':'');
+  document.getElementById('btn-noex').className  = 'toggle-btn'+(!val?' on-no-exercise':'');
+  updateLabels(); render();
+}
+function setExTime(val) {
+  exTime=val;
+  document.getElementById('btn-morning').className = 'toggle-btn'+(val==='morning'?' on-morning':'');
+  document.getElementById('btn-evening').className = 'toggle-btn'+(val==='evening'?' on-evening':'');
+  updateLabels(); render();
+}
+function setLunch(val) {
+  lunch=val;
+  document.getElementById('btn-bento').className = 'toggle-btn'+(val==='bento'?' on-bento':'');
+  document.getElementById('btn-home').className  = 'toggle-btn'+(val==='home'?' on-home':'');
+  render();
+}
+
+// ── Timeline builder ─────────────────────────────────────
+// Strategy:
+//  1. Place all fixed non-study events (anchored by absolute time)
+//  2. Sort them
+//  3. Fill gaps with study blocks
+//  4. After last fixed event → rest if time remains before sleep, then sleep
+
+function mk(start, duration, name, type, isTransit=false) {
+  return { start, end:start+duration, name, type, isTransit };
+}
+
+function buildTimeline() {
+  const fixed = [];
+  function addF(start, duration, name, type, isTransit=false) {
+    if (duration<=0) return;
+    fixed.push(mk(start, duration, name, type, isTransit));
+  }
+  function tLabel(m) { return `(${m}분)`; }
+
+  // ── Common morning block (both exercise modes) ──
+  // Non-exercise morning or morning-exercise morning
+  // We'll branch below
+
+  if (!isEx) {
+    // ── NO EXERCISE ──
+    let t = S.wake;
+    addF(t, S.morning, '아침 준비 + 식사', 'hygiene');      t += S.morning;
+    addF(t, S.skaTravel, `이동 ${tLabel(S.skaTravel)}`, 'transit', true); t += S.skaTravel;
+    // t = arrival at ska
+
+    _addLunchDinnerEvening(addF, tLabel, t, false, false);
+
+  } else if (exTime === 'morning') {
+    // ── MORNING EXERCISE ──
+    let t = S.wake;
+    addF(t, S.exTravel, `헬스장 이동 ${tLabel(S.exTravel)}`, 'transit', true); t += S.exTravel;
+    addF(t, S.exDur, '운동 (근력 + 유산소)', 'exercise');                        t += S.exDur;
+    addF(t, S.exTravel, `귀가 이동 ${tLabel(S.exTravel)}`, 'transit', true);    t += S.exTravel;
+    addF(t, S.shower, '샤워 + 아침 식사', 'hygiene');                            t += S.shower + (S.morning - 20 > 0 ? S.morning - 20 : 0); // breakfast included
+    // Recalculate: morning = shower + breakfast time = shower slider already covers it; let's use morning for meal+prep after shower
+    // Simpler: morning slot = shower + quick breakfast, represented by hygiene block of S.shower then a small prep
+    // Actually: let's just use S.shower as the combined shower+breakfast slot for morning ex
+    // Reset: just shower block = S.shower, then ska travel
+    addF(t, S.skaTravel, `이동 ${tLabel(S.skaTravel)}`, 'transit', true); // t already advanced
+    // Fix: recompute t properly
+    // (already pushed above with wrong t — let's rebuild cleanly)
+    fixed.length = 0; // reset and redo
+    t = S.wake;
+    addF(t, S.exTravel, `헬스장 이동 ${tLabel(S.exTravel)}`, 'transit', true); t += S.exTravel;
+    addF(t, S.exDur, '운동 (근력 + 유산소)', 'exercise');                        t += S.exDur;
+    addF(t, S.exTravel, `귀가 이동 ${tLabel(S.exTravel)}`, 'transit', true);    t += S.exTravel;
+    const morningBlock = S.shower + S.morning; // shower + breakfast/prep
+    addF(t, morningBlock, '샤워 + 아침 식사', 'hygiene');                        t += morningBlock;
+    addF(t, S.skaTravel, `이동 ${tLabel(S.skaTravel)}`, 'transit', true);       t += S.skaTravel;
+
+    _addLunchDinnerEvening(addF, tLabel, t, false, false);
+
+  } else {
+    // ── EVENING EXERCISE ──
+    // Morning: simple prep, go to ska, study all day
+    let t = S.wake;
+    addF(t, S.morning, '아침 준비 + 식사', 'hygiene'); t += S.morning;
+    addF(t, S.skaTravel, `이동 ${tLabel(S.skaTravel)}`, 'transit', true); t += S.skaTravel;
+
+    // Lunch & dinner as usual, but after dinner: go to gym instead of back to ska
+    _addLunchDinnerEvening(addF, tLabel, t, true /*isEveningEx*/, false);
+  }
+
+  // Sort
+  fixed.sort((a,b) => a.start - b.start);
+
+  // Stitch with study gaps
+  const items = [];
+  items.push({ start:S.wake, end:S.wake, name:'기상', type:'sleep', isTransit:false });
+
+  let cursor = S.wake;
+  for (const ev of fixed) {
+    const evStart = Math.max(ev.start, cursor); // never go backward
+    if (evStart > cursor) {
+      // Gap → study (only if not after last hygiene/rest block)
+      items.push({ start:cursor, end:evStart, name:'스카 공부', type:'study', isTransit:false });
+    }
+    // Adjust event if it got pushed
+    const adjusted = { ...ev, start:evStart, end:evStart+(ev.end-ev.start) };
+    items.push(adjusted);
+    cursor = adjusted.end;
+  }
+
+  // Rest: time between last event and sleep — if >0 add as rest
+  if (cursor < S.sleep) {
+    items.push({ start:cursor, end:S.sleep, name:'취침 전 휴식', type:'rest', isTransit:false });
+  }
+
+  items.push({ start:S.sleep, end:S.sleep, name:'취침', type:'sleep', isTransit:false });
+
+  return items;
+}
+
+// ── Shared lunch/dinner/evening logic ───────────────────
+function _addLunchDinnerEvening(addF, tLabel, skaArrival, isEveningEx, _unused) {
+  // LUNCH
+  if (lunch === 'bento') {
+    const lunchStart = Math.max(S.lunchAt, skaArrival + 30);
+    addF(lunchStart, S.lunchDur, '도시락 점심 (스카에서)', 'meal');
+
+    // DINNER
+    const dinnerStart = Math.max(S.dinnerAt, lunchStart + S.lunchDur + 30);
+    addF(dinnerStart, S.skaTravel, `귀가 이동 ${tLabel(S.skaTravel)}`, 'transit', true);
+    const dinnerActual = dinnerStart + S.skaTravel;
+    addF(dinnerActual, S.dinnerDur, '저녁 식사 (가족)', 'meal');
+    const afterDinner = dinnerActual + S.dinnerDur;
+
+    if (isEveningEx) {
+      // After dinner → gym
+      _addEveningExBlock(addF, tLabel, afterDinner);
+    } else {
+      // After dinner → back to ska → study → home
+      addF(afterDinner, S.skaTravel, `이동 ${tLabel(S.skaTravel)}`, 'transit', true);
+      const backAtSka = afterDinner + S.skaTravel;
+      // Study until curfew
+      const returnHome = S.curfew;
+      addF(returnHome, S.skaTravel, `귀가 이동 ${tLabel(S.skaTravel)}`, 'transit', true);
+      const homeTime = returnHome + S.skaTravel;
+      addF(homeTime, S.shower, '샤워', 'hygiene');
+      // rest handled by gap-fill to sleep
+    }
+
+  } else {
+    // HOME LUNCH
+    const lunchStart = Math.max(S.lunchAt, skaArrival + 30);
+    addF(lunchStart, S.skaTravel, `귀가 이동 ${tLabel(S.skaTravel)}`, 'transit', true);
+    const lunchActual = lunchStart + S.skaTravel;
+    addF(lunchActual, S.lunchDur, '점심 식사 (가족)', 'meal');
+    const afterLunch = lunchActual + S.lunchDur;
+    addF(afterLunch, S.skaTravel, `이동 ${tLabel(S.skaTravel)}`, 'transit', true);
+    const backAfterLunch = afterLunch + S.skaTravel;
+
+    // DINNER
+    const dinnerStart = Math.max(S.dinnerAt, backAfterLunch + 30);
+    addF(dinnerStart, S.skaTravel, `귀가 이동 ${tLabel(S.skaTravel)}`, 'transit', true);
+    const dinnerActual = dinnerStart + S.skaTravel;
+    addF(dinnerActual, S.dinnerDur, '저녁 식사 (가족)', 'meal');
+    const afterDinner = dinnerActual + S.dinnerDur;
+
+    if (isEveningEx) {
+      _addEveningExBlock(addF, tLabel, afterDinner);
+    } else {
+      addF(afterDinner, S.skaTravel, `이동 ${tLabel(S.skaTravel)}`, 'transit', true);
+      const backAtSka = afterDinner + S.skaTravel;
+      const returnHome = S.curfew;
+      addF(returnHome, S.skaTravel, `귀가 이동 ${tLabel(S.skaTravel)}`, 'transit', true);
+      const homeTime = returnHome + S.skaTravel;
+      addF(homeTime, S.shower, '샤워', 'hygiene');
+    }
+  }
+}
+
+function _addEveningExBlock(addF, tLabel, afterDinner) {
+  // Go to gym after dinner
+  // exAt = S.evExAt, but push to max(afterDinner, evExAt)
+  const gymDepart = Math.max(S.evExAt, afterDinner);
+  addF(gymDepart, S.exTravel, `헬스장 이동 ${tLabel(S.exTravel)}`, 'transit', true);
+  const gymStart = gymDepart + S.exTravel;
+  addF(gymStart, S.exDur, '운동 (근력 + 유산소)', 'exercise');
+  const gymEnd = gymStart + S.exDur;
+  addF(gymEnd, S.exTravel, `귀가 이동 ${tLabel(S.exTravel)}`, 'transit', true);
+  const homeTime = gymEnd + S.exTravel;
+  addF(homeTime, S.shower, '샤워', 'hygiene');
+  // rest: gap-fill to sleep
+}
+
+// ── Render ───────────────────────────────────────────────
+function render() {
+  // Determine mode label
+  let modeEmoji, modeTitle, modeSubtitle, modeBadge;
+  if (!isEx) {
+    modeEmoji = '📚'; modeTitle = '운동 안 가는 날';
+    modeSubtitle = lunch==='bento' ? '점심 도시락 루틴' : '집 점심 루틴';
+    modeBadge = 'badge-noex';
+  } else if (exTime==='morning') {
+    modeEmoji = '🏋️'; modeTitle = '아침 운동 가는 날';
+    modeSubtitle = lunch==='bento' ? '점심 도시락 루틴' : '집 점심 루틴';
+    modeBadge = 'badge-ex';
+  } else {
+    modeEmoji = '🌙'; modeTitle = '저녁 운동 가는 날';
+    modeSubtitle = lunch==='bento' ? '점심 도시락 루틴' : '집 점심 루틴';
+    modeBadge = 'badge-ex';
+  }
+
+  document.getElementById('cardEmoji').textContent    = modeEmoji;
+  document.getElementById('cardTitle').textContent    = modeTitle;
+  document.getElementById('cardSubtitle').textContent = modeSubtitle;
+
+  const items = buildTimeline();
+
+  // Stats
+  const studyMins  = items.filter(i=>i.type==='study').reduce((s,i)=>s+(i.end-i.start),0);
+  const nightSleep = 1440 - S.sleep + S.wake;
+  const trips      = items.filter(i=>i.isTransit).length;
+
+  const sH=Math.floor(studyMins/60), sM=studyMins%60;
+  const studyStr = sM>0?`${sH}h${sM}m`:`${sH}h`;
+  const nsH=Math.floor(nightSleep/60), nsM=nightSleep%60;
+  const sleepStr = nsM>0?`${nsH}h${nsM}m`:`${nsH}h`;
+
+  const studyEl=document.getElementById('stat-study');
+  const sleepEl=document.getElementById('stat-sleep-dur');
+  studyEl.textContent=studyStr; sleepEl.textContent=sleepStr;
+  document.getElementById('stat-trips').textContent=trips+'회';
+  studyEl.className='stat-value'+(studyMins<7*60?' warn-val':'');
+  sleepEl.className='stat-value'+(nightSleep<7*60?' warn-val':'');
+
+  document.getElementById('cardBadge').textContent=`순공 ${studyStr}`;
+  document.getElementById('cardBadge').className='badge '+modeBadge;
+
+  // Warnings
+  const warns=[];
+  if (nightSleep<7*60) warns.push('⚠️ 수면 시간이 부족합니다 (최소 7시간 필요)');
+  if (studyMins <7*60) warns.push('⚠️ 목표 순공 시간에 도달하지 못했습니다 (최소 7시간 필요)');
+  document.getElementById('warnArea').innerHTML=warns.map(w=>`<div class="warn-box">${w}</div>`).join('');
+
+  // Timeline HTML
+  document.getElementById('timeline').innerHTML = items.map(item => {
+    const tLabel = item.start>=1440 ? fmtAbs(item.start) : fmt(item.start);
+    const colorClass = (item.name==='기상'||item.name==='취침') ? 'c-default' : 'c-'+item.type;
+    const d = item.end - item.start;
+    const durLabel = d>0 ? dur(d) : '';
+    const extraClass = item.type==='study' ? ' study-block' : (item.isTransit ? ' transit' : '');
+    const dotCls = item.isTransit ? 'd-transit' : 'd-'+item.type;
+    return `
+      <div class="tl-item${extraClass}">
+        <div class="tl-time">${tLabel}</div>
+        <div class="tl-dot-col"><div class="tl-dot ${dotCls}"></div></div>
+        <div class="tl-content">
+          <div class="tl-name ${colorClass}">${item.name}</div>
+          ${durLabel&&!item.isTransit?`<div class="tl-dur">${durLabel}</div>`:''}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Tip
+  const tipKey = (!isEx?'noex':(exTime==='morning'?'ex_am':'ex_pm'))+'_'+lunch;
+  const tips = {
+    noex_bento:   '<strong>최강 루틴:</strong> 이동 최소화 + 도시락으로 집중 시간 극대화. 전날 밤 도시락만 싸두면 됨.',
+    noex_home:    '<strong>집 점심 + 비운동일:</strong> 점심 때 가족이랑 먹고 바로 나오는 게 핵심. 지체되면 순공 줄어요.',
+    ex_am_bento:  '<strong>아침 운동 + 도시락:</strong> 운동 → 상쾌한 상태로 하루 공부 돌입. 도시락 전날 밤에 싸두면 이동 최소화.',
+    ex_am_home:   '<strong>아침 운동 + 집 점심:</strong> 밥 먹고 바로 일어나는 게 핵심. 스카 출발 알람 필수.',
+    ex_pm_bento:  '<strong>저녁 운동:</strong> 오전부터 공부 집중 → 저녁 운동으로 스트레스 해소. 운동 후 샤워하고 바로 수면. 취침 2시간 전까지 운동 마무리 권장.',
+    ex_pm_home:   '<strong>저녁 운동 + 집 점심:</strong> 낮에 집중 → 저녁 운동. 오전 공부 블록이 길어서 효율적. 취침 2시간 전 운동 마무리 체크.',
+  };
+  const tipEl=document.getElementById('tipBox');
+  tipEl.innerHTML=tips[tipKey]||'';
+  tipEl.className='tip-box'+(!isEx?' tip-study':'');
+}
+
+// ── Init ─────────────────────────────────────────────────
+const _days=['일','월','화','수','목','금','토'];
+const _now=new Date();
+document.getElementById('dateDisplay').textContent=
+  `${_now.getMonth()+1}월 ${_now.getDate()}일 (${_days[_now.getDay()]})`;
+updateLabels();
+render();
+</script>
+</body>
+</html>
